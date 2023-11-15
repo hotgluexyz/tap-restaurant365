@@ -69,7 +69,7 @@ class Restaurant365Stream(RESTStream):
         start_date = self.config.get("start_date")
         if start_date:
             start_date = parser.parse(self.config.get("start_date"))
-        rep_key = self.get_starting_timestamp(context)
+        rep_key = self.get_starting_timestamp(context) + timedelta(seconds=1)
         return rep_key or start_date
 
 

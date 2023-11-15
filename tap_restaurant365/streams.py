@@ -79,7 +79,7 @@ class TransactionsStream(Restaurant365Stream):
         """Return a token for identifying next page or None if no more pages."""
         if self.paginate == True:
             # start_date = self.config.get("start_date")
-            start_date = parser.parse(self.tap_state["bookmarks"][self.name]['starting_replication_value']) or parser.parse(self.config.get("start_date"))
+            start_date = (parser.parse(self.tap_state["bookmarks"][self.name]['starting_replication_value']) + timedelta(seconds=1)) or parser.parse(self.config.get("start_date"))
             today = datetime.today()
             previous_token = previous_token or start_date
             next_token = (previous_token + timedelta(days=30)).replace(tzinfo=None)
