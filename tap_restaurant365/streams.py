@@ -78,8 +78,10 @@ class TransactionsStream(Restaurant365Stream):
     ) -> t.Optional[t.Any]:
         """Return a token for identifying next page or None if no more pages."""
         if self.paginate == True:
+            # start_date = self.config.get("start_date")
+            start_date = parser.parse(self.tap_state["bookmarks"][self.name]['starting_replication_value']) or parser.parse(self.config.get("start_date"))
             today = datetime.today()
-            previous_token = previous_token or parser.parse(self.config.get("start_date"))
+            previous_token = previous_token or start_date
             next_token = (previous_token + timedelta(days=30)).replace(tzinfo=None)
 
             if (today - next_token).days < 30:
@@ -98,7 +100,7 @@ class TransactionsStream(Restaurant365Stream):
 #x.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
-        start_date = next_page_token or parser.parse(self.config.get("start_date"))
+        start_date = next_page_token or self.get_starting_time(context)
         end_date = start_date + timedelta(days = 30)
         if self.replication_key:
             params["$filter"] = f"{self.replication_key} ge {start_date.strftime('%Y-%m-%dT%H:%M:%SZ')} and {self.replication_key} lt {end_date.strftime('%Y-%m-%dT%H:%M:%SZ')}"
