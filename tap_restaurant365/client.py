@@ -65,6 +65,14 @@ class Restaurant365Stream(RESTStream):
         return super().get_new_paginator()
     
 
+    def get_starting_time(self, context):
+        start_date = self.config.get("start_date")
+        if start_date:
+            start_date = parser.parse(self.config.get("start_date"))
+        rep_key = self.get_starting_timestamp(context)
+        return rep_key or start_date
+
+
 
 
     def get_url_params(
@@ -84,14 +92,8 @@ class Restaurant365Stream(RESTStream):
 
         params: dict = {}
         if self.replication_key:
-            params["$filter"] = f"{self.replication_key} ge {self.config.get('start_date')}"
-        if self.name == "journal_entries":
-            #set a date in the stream to check later to see if we need to keep calling to the stream
-            params["$filter"] += f" and type eq 'Journal Entry' and {self.replication_key} lt {(parser.parse(self.config.get('start_date')) + timedelta(days=30)).isoformat()}"
-        # if self.name == "bills":
-        #     #set a date in the stream to check later to see if we need to keep calling to the stream
-        #     self.started_on = (parser.parse(self.config.get('start_date')) + timedelta(days=30)).isoformat()
-        #     params["$filter"] += f" and type eq 'AP Invoices' and {self.replication_key} lt {self.started_on}"
+            start_date = self.get_starting_time(context).strftime('%Y-%m-%dT%H:%M:%SZ')
+            params["$filter"] = f"{self.replication_key} ge {start_date}"
 
         return params
 
