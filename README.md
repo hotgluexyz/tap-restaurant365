@@ -61,11 +61,24 @@ Developer TODO: If your tap requires special access on the source system, or any
 
 ### Executing the Tap Directly
 
+Create your config file and input your credentials.
+Example below
+
+```
+{
+    "username": "USERNAME", your store username
+    "password": "PASSWORD", your store password
+    "store_name": "YOUR SUBDOMAIN", https://THISVALUEHERE.restaurant365.com,
+    "start_date": "2021-10-01T00:00:00Z" DATE TO START SYNC
+}
+```
+
+
 ```bash
 tap-restaurant365 --version
 tap-restaurant365 --help
 tap-restaurant365 --config CONFIG --discover > ./catalog.json
-
+singer-discover --input CATALOG --output OUTPUT-CATALOG 
 tap-restaurant365 --config CONFIG --catalog CATALOG > data.txt
 ```
 
