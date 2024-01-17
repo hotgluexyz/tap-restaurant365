@@ -53,6 +53,19 @@ class TapRestaurant365(Tap):
             streams.BillsStream(self),
             streams.VendorsStream(self),
             streams.ItemsStream(self),
+            streams.EmployeesStream(self),
+            streams.LaborDetailStream(self),
+            streams.LocationsStream(self),
+            streams.JobTitleStream(self),
+            streams.POSEmployeeStream(self),
+            streams.SalesDetailStream(self),
+            streams.SalesEmployeeStream(self),
+            streams.SalesPaymentStream(self),
+            streams.EntityDeletedStream(self),
+            streams.CreditMemosStream(self),
+            streams.BankExpensesStream(self),
+            streams.StockCountStream(self),
+            streams.TransactionDetailsStream(self),
         ]
 
 

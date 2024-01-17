@@ -109,6 +109,12 @@ class TransactionsStream(Restaurant365Stream):
             params["$filter"] += f" and type eq 'Journal Entry'"
         if self.name == "bills":
             params["$filter"] += f" and type eq 'AP Invoice'"
+        if self.name == "credit_memos":
+            params["$filter"] += f" and type eq 'AP Credit Memo'"
+        if self.name == "stock_count":
+            params["$filter"] += f" and type eq 'Stock Count'"
+        if self.name == "bank_expenses":
+            params["$filter"] += f" and type eq 'Bank Expense'"
         #   
         return params
         
@@ -132,7 +138,33 @@ class JournalEntriesStream(TransactionsStream):
     primary_keys = ["transactionId"]
     replication_key = "modifiedOn"
     paginate = True
+    
+class CreditMemosStream(TransactionsStream):
+    """Define custom stream."""
 
+    name = "credit_memos"
+    path = "/Transaction" #?$filter=type eq 'AP Credit memo and modifiedOn ge '
+    primary_keys = ["transactionId"]
+    replication_key = "modifiedOn"
+    paginate = True
+
+class StockCountStream(TransactionsStream):
+    """Define custom stream."""
+
+    name = "stock_count"
+    path = "/Transaction" #?$filter=type eq 'Stock Count and modifiedOn ge '
+    primary_keys = ["transactionId"]
+    replication_key = "modifiedOn"
+    paginate = True
+
+class BankExpensesStream(TransactionsStream):
+    """Define custom stream."""
+
+    name = "bank_expenses"
+    path = "/Transaction" #?$filter=type eq 'Bank Expense and modifiedOn ge '
+    primary_keys = ["transactionId"]
+    replication_key = "modifiedOn"
+    paginate = True
 
 class VendorsStream(Restaurant365Stream):
     """Define custom stream."""
@@ -172,3 +204,427 @@ class ItemsStream(Restaurant365Stream):
         th.Property("modifiedOn", th.DateTimeType),
 
     ).to_dict()
+
+
+class LocationsStream(Restaurant365Stream):
+    """Define custom stream."""
+
+    name = "locations"
+    path = "/Location"
+    primary_keys = ["locationId"]
+    replication_key = "modifiedOn"
+    schema = th.PropertiesList(
+        th.Property("locationId", th.StringType),
+        th.Property("name", th.StringType),
+        th.Property("locationNumber", th.StringType),
+        th.Property("legalEntityId", th.StringType),
+        th.Property("legalEntityNumber", th.StringType),
+        th.Property("legalEntityName", th.StringType),
+        th.Property("createdBy", th.StringType),
+        th.Property("createdOn", th.DateTimeType),
+        th.Property("modifiedBy", th.StringType),
+        th.Property("modifiedOn", th.DateTimeType),
+
+    ).to_dict()
+
+class EmployeesStream(Restaurant365Stream):
+    """Define custom stream."""
+
+    name = "employees"
+    path = "/Employee"
+    primary_keys = ["employeeId"]
+    replication_key = "modifiedOn"
+    schema = th.PropertiesList(
+        th.Property("employeeId", th.StringType),
+        th.Property("fullName", th.StringType),
+        th.Property("address1", th.StringType),
+        th.Property("address2", th.StringType),
+        th.Property("allowTextMessaging", th.BooleanType),
+        th.Property("birthdayDay", th.StringType),
+        th.Property("birthdayMonth", th.StringType),
+        th.Property("city", th.StringType),
+        th.Property("firstName", th.StringType),
+        th.Property("hireDate", th.DateTimeType),
+        th.Property("lastName", th.StringType),
+        th.Property("middleName", th.StringType),
+        th.Property("mobilePhone", th.StringType),
+        th.Property("multipleLocations", th.BooleanType),
+        th.Property("payrollID", th.StringType),
+        th.Property("phoneNumber", th.StringType),
+        th.Property("posid", th.StringType),
+        th.Property("state", th.StringType),
+        th.Property("zipCode", th.StringType),
+        th.Property("primaryLocation_id", th.StringType),
+        th.Property("inactive", th.StringType),
+        th.Property("email", th.StringType),
+        th.Property("birthday", th.DateTimeType),
+        th.Property("createdBy", th.StringType),
+        th.Property("createdOn", th.DateTimeType),
+        th.Property("modifiedBy", th.StringType),
+        th.Property("modifiedOn", th.DateTimeType),
+
+    ).to_dict()
+
+class JobTitleStream(Restaurant365Stream):
+    """Define custom stream."""
+
+    name = "job_title"
+    path = "/JobTitle"
+    primary_keys = ["jobTitleId"]
+    replication_key = "modifiedOn"
+    schema = th.PropertiesList(
+        th.Property("jobTitleId", th.StringType),
+        th.Property("name", th.StringType),
+        th.Property("description", th.StringType),
+        th.Property("jobCode", th.StringType),
+        th.Property("payRate", th.StringType),
+        th.Property("posid", th.StringType),
+        th.Property("glAccount_Id", th.StringType),
+        th.Property("location_Id", th.StringType),
+        th.Property("excludeFromSchedule", th.BooleanType),
+        th.Property("excludeFromPOSImport", th.BooleanType),
+        th.Property("createdBy", th.StringType),
+        th.Property("createdOn", th.DateTimeType),
+        th.Property("modifiedBy", th.StringType),
+        th.Property("modifiedOn", th.DateTimeType),
+
+    ).to_dict()
+
+class LaborDetailStream(Restaurant365Stream):
+    """Define custom stream."""
+
+    name = "labor_detail"
+    path = "/LaborDetail"
+    primary_keys = ["laborId"]
+    replication_key = "modifiedOn"
+    schema = th.PropertiesList(
+        th.Property("laborId", th.StringType),
+        th.Property("labor", th.StringType),
+        th.Property("dateWorked", th.DateTimeType),
+        th.Property("dailysalessummaryid", th.StringType),
+        th.Property("endTime", th.DateTimeType),
+        th.Property("hours", th.StringType),
+        th.Property("payRate", th.StringType),
+        th.Property("payrollStatus", th.StringType),
+        th.Property("startTime", th.DateTimeType),
+        th.Property("total", th.NumberType),
+        th.Property("employee_ID", th.StringType),
+        th.Property("employeeJobTitle_ID", th.StringType),
+        th.Property("jobTitle_ID", th.StringType),
+        th.Property("location_ID", th.StringType),
+        th.Property("cateringEvent", th.StringType),
+        th.Property("employee", th.StringType),
+        th.Property("payrollID", th.StringType),
+        th.Property("jobTitle", th.StringType),
+        th.Property("dateWorkedDateText", th.StringType),
+        th.Property("location", th.StringType),
+        th.Property("createdBy", th.StringType),
+        th.Property("createdOn", th.DateTimeType),
+        th.Property("modifiedBy", th.StringType),
+        th.Property("modifiedOn", th.DateTimeType),
+
+    ).to_dict()
+
+
+class POSEmployeeStream(Restaurant365Stream):
+    """Define custom stream."""
+
+    name = "pos_employee"
+    path = "/POSEmployee"
+    primary_keys = ["posEmployeeId"]
+    replication_key = "modifiedOn"
+    schema = th.PropertiesList(
+        th.Property("posEmployeeId", th.StringType),
+        th.Property("fullName", th.StringType),
+        th.Property("posid", th.StringType),
+        th.Property("location_id", th.StringType),
+        th.Property("employee_id", th.StringType),
+        th.Property("createdBy", th.StringType),
+        th.Property("createdOn", th.DateTimeType),
+        th.Property("modifiedBy", th.StringType),
+        th.Property("modifiedOn", th.DateTimeType),
+
+    ).to_dict()
+
+class SalesEmployeeStream(Restaurant365Stream):
+    """Define custom stream."""
+
+    name = "sales_employee"
+    path = "/SalesEmployee"
+    primary_keys = ["salesId"]
+    replication_key = "modifiedOn"
+    paginate = True
+    schema = th.PropertiesList(
+        th.Property("salesId", th.StringType),
+        th.Property("receiptNumber", th.StringType),
+        th.Property("checkNumber", th.StringType),
+        th.Property("comment", th.StringType),
+        th.Property("date", th.DateTimeType),
+        th.Property("dayOfWeek", th.StringType),
+        th.Property("dayPart", th.StringType),
+        th.Property("netSales", th.StringType),
+        th.Property("numberOfGuests", th.StringType),
+        th.Property("orderHour", th.StringType),
+        th.Property("salesAmount", th.StringType),
+        th.Property("taxAmount", th.StringType),
+        th.Property("tipAmount", th.StringType),
+        th.Property("totalAmount", th.StringType),
+        th.Property("totalPayment", th.StringType),
+        th.Property("void", th.BooleanType),
+        th.Property("server", th.StringType),
+        th.Property("location", th.StringType),
+        th.Property("grossSales	", th.StringType),
+        th.Property("dailysalessummaryid", th.StringType),
+        th.Property("createdBy", th.StringType),
+        th.Property("createdOn", th.DateTimeType),
+        th.Property("modifiedBy", th.StringType),
+        th.Property("modifiedOn", th.DateTimeType),
+        th.Property("serviceType", th.StringType),
+
+    ).to_dict()
+
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: t.Optional[t.Any]
+    ) -> t.Optional[t.Any]:
+        """Return a token for identifying next page or None if no more pages."""
+        if self.paginate == True:
+            # start_date = self.config.get("start_date")
+            start_date = (parser.parse(self.tap_state["bookmarks"][self.name]['starting_replication_value']) + timedelta(seconds=1)) or parser.parse(self.config.get("start_date"))
+            today = datetime.today()
+            previous_token = previous_token or start_date
+            next_token = (previous_token + timedelta(days=30)).replace(tzinfo=None)
+
+            if (today - next_token).days < 30:
+                self.paginate = False
+            return next_token
+        else:
+            return None
+        
+    def get_url_params(
+        self,
+        context: dict | None,  # noqa: ARG002
+        next_page_token: Any | None,  # noqa: ANN401
+    ) -> dict[str, Any]:
+        
+        params: dict = {}
+#x.strftime('%Y-%m-%dT%H:%M:%SZ')
+        
+        start_date = next_page_token or self.get_starting_time(context)
+        end_date = start_date + timedelta(days = 30)
+        if self.replication_key:
+            params["$filter"] = f"{self.replication_key} ge {start_date.strftime('%Y-%m-%dT%H:%M:%SZ')} and {self.replication_key} lt {end_date.strftime('%Y-%m-%dT%H:%M:%SZ')}"
+        
+        return params
+
+
+class SalesDetailStream(Restaurant365Stream):
+    """Define custom stream."""
+
+    name = "sales_detail"
+    path = "/SalesDetail"
+    primary_keys = ["salesdetailID"]
+    replication_key = "modifiedOn"
+    paginate = True
+    schema = th.PropertiesList(
+        th.Property("salesdetailID", th.StringType),
+        th.Property("menuitem", th.StringType),
+        th.Property("amount", th.StringType),
+        th.Property("customerPOSText", th.StringType),
+        th.Property("date", th.DateTimeType),
+        th.Property("quantity", th.StringType),
+        th.Property("void", th.BooleanType),
+        th.Property("company", th.StringType),
+        th.Property("location", th.StringType),
+        th.Property("salesID", th.StringType),
+        th.Property("salesAccount", th.StringType),
+        th.Property("category", th.StringType),
+        th.Property("taxAmount", th.StringType),
+        th.Property("houseAccountTransaction", th.StringType),
+        th.Property("dailysalessummaryid", th.StringType),
+        th.Property("transactionDetailID", th.StringType),
+        th.Property("createdBy", th.StringType),
+        th.Property("createdOn", th.DateTimeType),
+        th.Property("modifiedBy", th.StringType),
+        th.Property("modifiedOn", th.DateTimeType),
+
+    ).to_dict()
+
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: t.Optional[t.Any]
+    ) -> t.Optional[t.Any]:
+        """Return a token for identifying next page or None if no more pages."""
+        if self.paginate == True:
+            # start_date = self.config.get("start_date")
+            start_date = (parser.parse(self.tap_state["bookmarks"][self.name]['starting_replication_value']) + timedelta(seconds=1)) or parser.parse(self.config.get("start_date"))
+            today = datetime.today()
+            previous_token = previous_token or start_date
+            next_token = (previous_token + timedelta(days=30)).replace(tzinfo=None)
+
+            if (today - next_token).days < 30:
+                self.paginate = False
+            return next_token
+        else:
+            return None
+        
+    def get_url_params(
+        self,
+        context: dict | None,  # noqa: ARG002
+        next_page_token: Any | None,  # noqa: ANN401
+    ) -> dict[str, Any]:
+        
+        params: dict = {}
+#x.strftime('%Y-%m-%dT%H:%M:%SZ')
+        
+        start_date = next_page_token or self.get_starting_time(context)
+        end_date = start_date + timedelta(days = 30)
+        if self.replication_key:
+            params["$filter"] = f"{self.replication_key} ge {start_date.strftime('%Y-%m-%dT%H:%M:%SZ')} and {self.replication_key} lt {end_date.strftime('%Y-%m-%dT%H:%M:%SZ')}"
+        
+        return params
+
+
+class SalesPaymentStream(Restaurant365Stream):
+    """Define custom stream."""
+
+    name = "sales_payment"
+    path = "/SalesPayment"
+    primary_keys = ["salespaymentId"]
+    replication_key = "modifiedOn"
+    paginate = True
+    schema = th.PropertiesList(
+        th.Property("salespaymentId", th.StringType),
+        th.Property("name", th.StringType),
+        th.Property("amount", th.StringType),
+        th.Property("comment", th.StringType),
+        th.Property("customerPOSText", th.StringType),
+        th.Property("date", th.DateTimeType),
+        th.Property("dailysalessummaryid", th.StringType),
+        th.Property("isException", th.BooleanType),
+        th.Property("missingreceipt", th.BooleanType),
+        th.Property("company", th.StringType),
+        th.Property("location", th.StringType),
+        th.Property("paymenttype", th.StringType),
+        th.Property("salesID", th.StringType),
+        th.Property("houseAccountTransaction", th.StringType),
+        th.Property("dailysalessummaryid", th.StringType),
+        th.Property("transactionDetailID", th.StringType),
+        th.Property("cateringEvent", th.StringType),
+        th.Property("exclude", th.BooleanType),
+        th.Property("createdBy", th.StringType),
+        th.Property("createdOn", th.DateTimeType),
+        th.Property("modifiedBy", th.StringType),
+        th.Property("modifiedOn", th.DateTimeType),
+
+    ).to_dict()
+
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: t.Optional[t.Any]
+    ) -> t.Optional[t.Any]:
+        """Return a token for identifying next page or None if no more pages."""
+        if self.paginate == True:
+            # start_date = self.config.get("start_date")
+            start_date = (parser.parse(self.tap_state["bookmarks"][self.name]['starting_replication_value']) + timedelta(seconds=1)) or parser.parse(self.config.get("start_date"))
+            today = datetime.today()
+            previous_token = previous_token or start_date
+            next_token = (previous_token + timedelta(days=30)).replace(tzinfo=None)
+
+            if (today - next_token).days < 30:
+                self.paginate = False
+            return next_token
+        else:
+            return None
+        
+    def get_url_params(
+        self,
+        context: dict | None,  # noqa: ARG002
+        next_page_token: Any | None,  # noqa: ANN401
+    ) -> dict[str, Any]:
+        
+        params: dict = {}
+#x.strftime('%Y-%m-%dT%H:%M:%SZ')
+        
+        start_date = next_page_token or self.get_starting_time(context)
+        end_date = start_date + timedelta(days = 30)
+        if self.replication_key:
+            params["$filter"] = f"{self.replication_key} ge {start_date.strftime('%Y-%m-%dT%H:%M:%SZ')} and {self.replication_key} lt {end_date.strftime('%Y-%m-%dT%H:%M:%SZ')}"
+        
+        return params
+
+
+class EntityDeletedStream(Restaurant365Stream):
+    """Define custom stream."""
+
+    name = "entity_deleted"
+    path = "/EntityDeleted"
+    primary_keys = ["entityId"]
+    replication_key = "deletedOn"
+    schema = th.PropertiesList(
+        th.Property("entityId", th.StringType),
+        th.Property("entityName", th.StringType),
+        th.Property("deletedOn", th.DateTimeType),
+        th.Property("rowVersion", th.IntegerType),
+
+    ).to_dict()
+
+class TransactionDetailsStream(Restaurant365Stream):
+    """Define custom stream."""
+
+    name = "transaction_detail"
+    path = "/TransactionDetail"
+    primary_keys = ["transactionDetailId"]
+    replication_key = "modifiedOn"
+    paginate = True
+    schema = th.PropertiesList(
+        th.Property("transactionDetailId", th.StringType),
+        th.Property("transactionId", th.StringType),
+        th.Property("locationId", th.StringType),
+        th.Property("glAccountId", th.StringType),
+        th.Property("item", th.StringType),
+        th.Property("credit", th.StringType),
+        th.Property("debit", th.StringType),
+        th.Property("amount", th.StringType),
+        th.Property("quantity", th.StringType),
+        th.Property("adjustment", th.StringType),
+        th.Property("unitOfMeasureName", th.StringType),
+        th.Property("comment", th.StringType),
+        th.Property("cateringEvent", th.StringType),
+        th.Property("exclude", th.BooleanType),
+        th.Property("createdBy", th.StringType),
+        th.Property("createdOn", th.DateTimeType),
+        th.Property("modifiedBy", th.StringType),
+        th.Property("modifiedOn", th.DateTimeType),
+
+    ).to_dict()
+
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: t.Optional[t.Any]
+    ) -> t.Optional[t.Any]:
+        """Return a token for identifying next page or None if no more pages."""
+        if self.paginate == True:
+            # start_date = self.config.get("start_date")
+            start_date = (parser.parse(self.tap_state["bookmarks"][self.name]['starting_replication_value']) + timedelta(seconds=1)) or parser.parse(self.config.get("start_date"))
+            today = datetime.today()
+            previous_token = previous_token or start_date
+            next_token = (previous_token + timedelta(days=30)).replace(tzinfo=None)
+
+            if (today - next_token).days < 30:
+                self.paginate = False
+            return next_token
+        else:
+            return None
+        
+    def get_url_params(
+        self,
+        context: dict | None,  # noqa: ARG002
+        next_page_token: Any | None,  # noqa: ANN401
+    ) -> dict[str, Any]:
+        
+        params: dict = {}
+#x.strftime('%Y-%m-%dT%H:%M:%SZ')
+        
+        start_date = next_page_token or self.get_starting_time(context)
+        end_date = start_date + timedelta(days = 30)
+        if self.replication_key:
+            params["$filter"] = f"{self.replication_key} ge {start_date.strftime('%Y-%m-%dT%H:%M:%SZ')} and {self.replication_key} lt {end_date.strftime('%Y-%m-%dT%H:%M:%SZ')}"
+        
+        return params
