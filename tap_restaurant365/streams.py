@@ -36,16 +36,15 @@ class ThirtyDaysStream(Restaurant365Stream):
             return next_token
         else:
             return None
-        
+
     def get_url_params(
         self,
         context: dict | None,  # noqa: ARG002
         next_page_token: Any | None,  # noqa: ANN401
     ) -> dict[str, Any]:
-        
+
         params: dict = {}
-#x.strftime('%Y-%m-%dT%H:%M:%SZ')
-        
+
         start_date = next_page_token or self.get_starting_time(context)
         end_date = start_date + timedelta(days = 30)
         if self.replication_key:
@@ -61,7 +60,6 @@ class ThirtyDaysStream(Restaurant365Stream):
             params["$filter"] += f" and type eq 'Stock Count'"
         if self.name == "bank_expenses":
             params["$filter"] += f" and type eq 'Bank Expense'"
-        #   
 
         return params
 
@@ -132,7 +130,7 @@ class BillsStream(TransactionsStream):
     """Define custom stream."""
 
     name = "bills"
-    path = "/Transaction"  #?$filter=type eq 'AP Invoices' 
+    path = "/Transaction"  #?$filter=type eq 'AP Invoices'
     primary_keys = ["transactionId"]
     replication_key = "modifiedOn"
     paginate = True
@@ -146,7 +144,7 @@ class JournalEntriesStream(TransactionsStream):
     primary_keys = ["transactionId"]
     replication_key = "modifiedOn"
     paginate = True
-    
+
 class CreditMemosStream(TransactionsStream):
     """Define custom stream."""
 
@@ -492,11 +490,11 @@ class TransactionDetailsStream(ThirtyDaysStream):
         th.Property("locationId", th.StringType),
         th.Property("glAccountId", th.StringType),
         th.Property("item", th.StringType),
-        th.Property("credit", th.StringType),
-        th.Property("debit", th.StringType),
-        th.Property("amount", th.StringType),
-        th.Property("quantity", th.StringType),
-        th.Property("adjustment", th.StringType),
+        th.Property("credit", th.NumberType),
+        th.Property("debit", th.NumberType),
+        th.Property("amount", th.NumberType),
+        th.Property("quantity", th.NumberType),
+        th.Property("adjustment", th.NumberType),
         th.Property("unitOfMeasureName", th.StringType),
         th.Property("comment", th.StringType),
         th.Property("cateringEvent", th.StringType),
