@@ -25,7 +25,7 @@ class ThirtyDaysStream(Restaurant365Stream):
     ) -> t.Optional[t.Any]:
         """Return a token for identifying next page or None if no more pages."""
         if self.paginate == True:
-            # start_date = self.config.get("start_date")
+
             start_date = (parser.parse(self.tap_state["bookmarks"][self.name]['starting_replication_value']) + timedelta(seconds=1)) or parser.parse(self.config.get("start_date"))
             today = datetime.today()
             previous_token = previous_token or start_date
@@ -36,16 +36,15 @@ class ThirtyDaysStream(Restaurant365Stream):
             return next_token
         else:
             return None
-        
+
     def get_url_params(
         self,
         context: dict | None,  # noqa: ARG002
         next_page_token: Any | None,  # noqa: ANN401
     ) -> dict[str, Any]:
-        
+
         params: dict = {}
-#x.strftime('%Y-%m-%dT%H:%M:%SZ')
-        
+
         start_date = next_page_token or self.get_starting_time(context)
         end_date = start_date + timedelta(days = 30)
         if self.replication_key:
@@ -264,7 +263,7 @@ class EmployeesStream(Restaurant365Stream):
         th.Property("state", th.StringType),
         th.Property("zipCode", th.StringType),
         th.Property("primaryLocation_id", th.StringType),
-        th.Property("inactive", th.StringType),
+        th.Property("inactive", th.BooleanType),
         th.Property("email", th.StringType),
         th.Property("birthday", th.DateTimeType),
         th.Property("createdBy", th.StringType),
@@ -286,7 +285,7 @@ class JobTitleStream(Restaurant365Stream):
         th.Property("name", th.StringType),
         th.Property("description", th.StringType),
         th.Property("jobCode", th.StringType),
-        th.Property("payRate", th.StringType),
+        th.Property("payRate", th.NumberType),
         th.Property("posid", th.StringType),
         th.Property("glAccount_Id", th.StringType),
         th.Property("location_Id", th.StringType),
@@ -312,9 +311,9 @@ class LaborDetailStream(Restaurant365Stream):
         th.Property("dateWorked", th.DateTimeType),
         th.Property("dailysalessummaryid", th.StringType),
         th.Property("endTime", th.DateTimeType),
-        th.Property("hours", th.StringType),
-        th.Property("payRate", th.StringType),
-        th.Property("payrollStatus", th.StringType),
+        th.Property("hours", th.NumberType),
+        th.Property("payRate", th.NumberType),
+        th.Property("payrollStatus", th.IntegerType),
         th.Property("startTime", th.DateTimeType),
         th.Property("total", th.NumberType),
         th.Property("employee_ID", th.StringType),
@@ -371,18 +370,18 @@ class SalesEmployeeStream(ThirtyDaysStream):
         th.Property("date", th.DateTimeType),
         th.Property("dayOfWeek", th.StringType),
         th.Property("dayPart", th.StringType),
-        th.Property("netSales", th.StringType),
+        th.Property("netSales", th.NumberType),
         th.Property("numberOfGuests", th.StringType),
-        th.Property("orderHour", th.StringType),
-        th.Property("salesAmount", th.StringType),
-        th.Property("taxAmount", th.StringType),
-        th.Property("tipAmount", th.StringType),
-        th.Property("totalAmount", th.StringType),
-        th.Property("totalPayment", th.StringType),
+        th.Property("orderHour", th.IntegerType),
+        th.Property("salesAmount", th.NumberType),
+        th.Property("taxAmount", th.NumberType),
+        th.Property("tipAmount", th.NumberType),
+        th.Property("totalAmount", th.NumberType),
+        th.Property("totalPayment", th.NumberType),
         th.Property("void", th.BooleanType),
         th.Property("server", th.StringType),
         th.Property("location", th.StringType),
-        th.Property("grossSales	", th.StringType),
+        th.Property("grossSales	", th.NumberType),
         th.Property("dailysalessummaryid", th.StringType),
         th.Property("createdBy", th.StringType),
         th.Property("createdOn", th.DateTimeType),
@@ -405,17 +404,17 @@ class SalesDetailStream(ThirtyDaysStream):
     schema = th.PropertiesList(
         th.Property("salesdetailID", th.StringType),
         th.Property("menuitem", th.StringType),
-        th.Property("amount", th.StringType),
+        th.Property("amount", th.NumberType),
         th.Property("customerPOSText", th.StringType),
         th.Property("date", th.DateTimeType),
-        th.Property("quantity", th.StringType),
+        th.Property("quantity", th.NumberType),
         th.Property("void", th.BooleanType),
         th.Property("company", th.StringType),
         th.Property("location", th.StringType),
         th.Property("salesID", th.StringType),
         th.Property("salesAccount", th.StringType),
         th.Property("category", th.StringType),
-        th.Property("taxAmount", th.StringType),
+        th.Property("taxAmount", th.NumberType),
         th.Property("houseAccountTransaction", th.StringType),
         th.Property("dailysalessummaryid", th.StringType),
         th.Property("transactionDetailID", th.StringType),
@@ -438,7 +437,7 @@ class SalesPaymentStream(ThirtyDaysStream):
     schema = th.PropertiesList(
         th.Property("salespaymentId", th.StringType),
         th.Property("name", th.StringType),
-        th.Property("amount", th.StringType),
+        th.Property("amount", th.NumberType),
         th.Property("comment", th.StringType),
         th.Property("customerPOSText", th.StringType),
         th.Property("date", th.DateTimeType),
@@ -492,11 +491,11 @@ class TransactionDetailsStream(ThirtyDaysStream):
         th.Property("locationId", th.StringType),
         th.Property("glAccountId", th.StringType),
         th.Property("item", th.StringType),
-        th.Property("credit", th.StringType),
-        th.Property("debit", th.StringType),
-        th.Property("amount", th.StringType),
-        th.Property("quantity", th.StringType),
-        th.Property("adjustment", th.StringType),
+        th.Property("credit", th.NumberType),
+        th.Property("debit", th.NumberType),
+        th.Property("amount", th.NumberType),
+        th.Property("quantity", th.NumberType),
+        th.Property("adjustment", th.NumberType),
         th.Property("unitOfMeasureName", th.StringType),
         th.Property("comment", th.StringType),
         th.Property("cateringEvent", th.StringType),
