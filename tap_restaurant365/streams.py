@@ -14,7 +14,7 @@ from singer_sdk import typing as th  # JSON Schema typing helpers
 from tap_restaurant365.client import Restaurant365Stream
 
 
-class ThirtyDaysStream(Restaurant365Stream):
+class LimitedTimeframeStream(Restaurant365Stream):
     """parent class stream for override/pagination"""
 
     name = "vendors"
@@ -29,9 +29,9 @@ class ThirtyDaysStream(Restaurant365Stream):
             start_date = (parser.parse(self.tap_state["bookmarks"][self.name]['starting_replication_value']) + timedelta(seconds=1)) or parser.parse(self.config.get("start_date"))
             today = datetime.today()
             previous_token = previous_token or start_date
-            next_token = (previous_token + timedelta(days=30)).replace(tzinfo=None)
+            next_token = (previous_token + timedelta(days=15)).replace(tzinfo=None)
 
-            if (today - next_token).days < 30:
+            if (today - next_token).days < 15:
                 self.paginate = False
             return next_token
         else:
@@ -60,7 +60,7 @@ class ThirtyDaysStream(Restaurant365Stream):
             params["$filter"] += f" and type eq 'Stock Count'"
         if self.name == "bank_expenses":
             params["$filter"] += f" and type eq 'Bank Expense'"
-        #   
+        #
 
         return params
 
@@ -101,7 +101,7 @@ class AccountsStream(Restaurant365Stream):
     ).to_dict()
 
 
-class TransactionsStream(ThirtyDaysStream):
+class TransactionsStream(LimitedTimeframeStream):
     """Define custom stream."""
 
     name = "transaction"
@@ -131,7 +131,7 @@ class BillsStream(TransactionsStream):
     """Define custom stream."""
 
     name = "bills"
-    path = "/Transaction"  #?$filter=type eq 'AP Invoices' 
+    path = "/Transaction"  #?$filter=type eq 'AP Invoices'
     primary_keys = ["transactionId"]
     replication_key = "modifiedOn"
     paginate = True
@@ -145,7 +145,7 @@ class JournalEntriesStream(TransactionsStream):
     primary_keys = ["transactionId"]
     replication_key = "modifiedOn"
     paginate = True
-    
+
 class CreditMemosStream(TransactionsStream):
     """Define custom stream."""
 
@@ -354,7 +354,7 @@ class POSEmployeeStream(Restaurant365Stream):
 
     ).to_dict()
 
-class SalesEmployeeStream(ThirtyDaysStream):
+class SalesEmployeeStream(LimitedTimeframeStream):
     """Define custom stream."""
 
     name = "sales_employee"
@@ -393,7 +393,7 @@ class SalesEmployeeStream(ThirtyDaysStream):
 
 
 
-class SalesDetailStream(ThirtyDaysStream):
+class SalesDetailStream(LimitedTimeframeStream):
     """Define custom stream."""
 
     name = "sales_detail"
@@ -426,7 +426,7 @@ class SalesDetailStream(ThirtyDaysStream):
     ).to_dict()
 
 
-class SalesPaymentStream(ThirtyDaysStream):
+class SalesPaymentStream(LimitedTimeframeStream):
     """Define custom stream."""
 
     name = "sales_payment"
@@ -477,7 +477,7 @@ class EntityDeletedStream(Restaurant365Stream):
 
     ).to_dict()
 
-class TransactionDetailsStream(ThirtyDaysStream):
+class TransactionDetailsStream(LimitedTimeframeStream):
     """Define custom stream."""
 
     name = "transaction_detail"
