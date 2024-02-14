@@ -25,15 +25,28 @@ class LimitedTimeframeStream(Restaurant365Stream):
     ) -> t.Optional[t.Any]:
         """Return a token for identifying next page or None if no more pages."""
         if self.paginate == True:
+            data = response.json()
+            if "@odata.nextLink" in data:
+                self.skip += 5000
+                if previous_token:
+                    previous_token = previous_token['token']
+                return {"token":previous_token,"skip":self.skip}  
+            else:
+                self.skip = 0     
+                start_date = (parser.parse(self.tap_state["bookmarks"][self.name]['starting_replication_value']) + timedelta(seconds=1)) or parser.parse(self.config.get("start_date"))
+                today = datetime.today()
+                if previous_token:
+                    if "token" in previous_token:
+                        previous_token = previous_token['token']
+                        if previous_token:
+                            #Look for records that are greater than the previous token
+                            previous_token = previous_token + timedelta(seconds=1)
+                previous_token = previous_token or start_date
+                next_token = (previous_token + timedelta(days=self.days_delta)).replace(tzinfo=None)
 
-            start_date = (parser.parse(self.tap_state["bookmarks"][self.name]['starting_replication_value']) + timedelta(seconds=1)) or parser.parse(self.config.get("start_date"))
-            today = datetime.today()
-            previous_token = previous_token or start_date
-            next_token = (previous_token + timedelta(days=15)).replace(tzinfo=None)
-
-            if (today - next_token).days < 15:
-                self.paginate = False
-            return next_token
+                if (today - next_token).days < self.days_delta:
+                    self.paginate = False
+                return {"token":next_token,'skip':self.skip}
         else:
             return None
 
@@ -44,9 +57,12 @@ class LimitedTimeframeStream(Restaurant365Stream):
     ) -> dict[str, Any]:
 
         params: dict = {}
-
-        start_date = next_page_token or self.get_starting_time(context)
-        end_date = start_date + timedelta(days = 30)
+        token_date = None
+        skip = 0
+        if next_page_token:
+            token_date, skip = next_page_token["token"], next_page_token["skip"]
+        start_date = token_date or self.get_starting_time(context)
+        end_date = start_date + timedelta(days = self.days_delta)
         if self.replication_key:
             params["$filter"] = f"{self.replication_key} ge {start_date.strftime('%Y-%m-%dT%H:%M:%SZ')} and {self.replication_key} lt {end_date.strftime('%Y-%m-%dT%H:%M:%SZ')}"
         if self.name == "journal_entries":
@@ -61,7 +77,8 @@ class LimitedTimeframeStream(Restaurant365Stream):
         if self.name == "bank_expenses":
             params["$filter"] += f" and type eq 'Bank Expense'"
         #
-
+        if skip>0:
+            params["$skip"] = skip
         return params
 
 
