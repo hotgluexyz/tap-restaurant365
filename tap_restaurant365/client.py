@@ -13,14 +13,15 @@ from singer_sdk.authenticators import BasicAuthenticator
 from singer_sdk.helpers.jsonpath import extract_jsonpath
 from singer_sdk.pagination import BaseAPIPaginator  # noqa: TCH002
 from singer_sdk.streams import RESTStream
-
+from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
+from http import HTTPStatus
 _Auth = Callable[[requests.PreparedRequest], requests.PreparedRequest]
-SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
 
 
 class Restaurant365Stream(RESTStream):
     """Restaurant365 stream class."""
-
+    skip = 0
+    days_delta = 10
     @property
     def url_base(self) -> str:
         """Return the API URL root, configurable via tap settings."""
@@ -72,9 +73,6 @@ class Restaurant365Stream(RESTStream):
         rep_key = self.get_starting_timestamp(context) + timedelta(seconds=1)
         return rep_key or start_date
 
-
-
-
     def get_url_params(
         self,
         context: dict | None,  # noqa: ARG002
@@ -96,34 +94,19 @@ class Restaurant365Stream(RESTStream):
             params["$filter"] = f"{self.replication_key} ge {start_date}"
 
         return params
+    
+    def validate_response(self, response: requests.Response) -> None:
+        if (
+            response.status_code in self.extra_retry_statuses
+            or response.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
+        ):
+            msg = self.response_error_message(response)
+            raise RetriableAPIError(msg, response)
 
-
-
-    def parse_response(self, response: requests.Response) -> Iterable[dict]:
-        """Parse the response and return an iterator of result records.
-
-        Args:
-            response: The HTTP ``requests.Response`` object.
-
-        Yields:
-            Each record from the source.
-        """
-        # TODO: Parse response body and return a set of records.
-        yield from extract_jsonpath(self.records_jsonpath, input=response.json())
-
-    def post_process(
-        self,
-        row: dict,
-        context: dict | None = None,  # noqa: ARG002
-    ) -> dict | None:
-        """As needed, append or transform raw data to match expected structure.
-
-        Args:
-            row: An individual record from the stream.
-            context: The stream context.
-
-        Returns:
-            The updated record dictionary, or ``None`` to skip the record.
-        """
-        # TODO: Delete this method if not needed.
-        return row
+        if (
+            HTTPStatus.BAD_REQUEST
+            <= response.status_code
+            < HTTPStatus.INTERNAL_SERVER_ERROR
+        ):
+            msg = self.response_error_message(response)
+            raise FatalAPIError(msg)
