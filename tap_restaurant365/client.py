@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable, Iterable, Optional
+from typing import Any, Callable, Iterable, Optional, Generator
 from datetime import timedelta, datetime
 from dateutil import parser
+import backoff
 
 
 import requests
@@ -94,6 +95,12 @@ class Restaurant365Stream(RESTStream):
             params["$filter"] = f"{self.replication_key} ge {start_date}"
 
         return params
+    
+    def backoff_wait_generator(self) -> Generator[float, None, None]:
+        return backoff.expo(base=2,factor=3) 
+    
+    def backoff_max_tries(self) -> int:
+        return 12
     
     def validate_response(self, response: requests.Response) -> None:
         if (
