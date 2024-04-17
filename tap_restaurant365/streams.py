@@ -38,21 +38,11 @@ class LimitedTimeframeStream(Restaurant365Stream):
                 replication_key_value = self.tap_state["bookmarks"][self.name]['starting_replication_value']
                 if "progress_markers" in self.tap_state["bookmarks"][self.name]:
                     replication_key_value = self.tap_state["bookmarks"][self.name]['progress_markers']["replication_key_value"]
-                # if replication_key_value in self.previous_replications:
-                #     self.logger.warn(f"Duplicated replication_key_value: {replication_key_value}") # noqa: G004
-                #     self.logger.warn(f"Possible previous duplicate request. {response.request.url}")  # noqa: G004
 
                 self.previous_replications.append(replication_key_value)
                 start_date = (parser.parse(replication_key_value) + timedelta(seconds=1)) or parser.parse(self.config.get("start_date"))
                 today = datetime.today()
-                if previous_token:
-                    if "token" in previous_token:
-                        previous_token = previous_token['token']
-                        if previous_token:
-                            #Look for records that are greater than the previous token
-                            previous_token = previous_token + timedelta(seconds=1)
-                previous_token = previous_token or start_date
-                next_token = (previous_token + timedelta(days=self.days_delta)).replace(tzinfo=None)
+                next_token = start_date.replace(tzinfo=None)
 
                 if (today - next_token).days < self.days_delta:
                     self.paginate = False
@@ -74,7 +64,9 @@ class LimitedTimeframeStream(Restaurant365Stream):
         start_date = token_date or self.get_starting_time(context)
         end_date = start_date + timedelta(days = self.days_delta)
         if self.replication_key:
-            params["$filter"] = f"{self.replication_key} ge {start_date.strftime('%Y-%m-%dT%H:%M:%SZ')} and {self.replication_key} lt {end_date.strftime('%Y-%m-%dT%H:%M:%SZ')}"
+            params["$filter"] = (
+                f"{self.replication_key} ge {start_date.strftime('%Y-%m-%dT%H:%M:%SZ')} and {self.replication_key} lt {end_date.strftime('%Y-%m-%dT23:59:59Z')}"
+            )
             params['$orderby'] = f"{self.replication_key}"
         if self.name == "journal_entries":
             #set a date in the stream to check later to see if we need to keep calling to the stream
