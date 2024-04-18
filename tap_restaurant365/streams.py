@@ -19,7 +19,6 @@ class LimitedTimeframeStream(Restaurant365Stream):
 
     name = "vendors"
     path = "/Company"
-    previous_replications = []  # noqa: RUF012
 
     def get_next_page_token(
         self, response: requests.Response, previous_token: t.Optional[t.Any]
@@ -39,7 +38,6 @@ class LimitedTimeframeStream(Restaurant365Stream):
                 if "progress_markers" in self.tap_state["bookmarks"][self.name]:
                     replication_key_value = self.tap_state["bookmarks"][self.name]['progress_markers']["replication_key_value"]
 
-                self.previous_replications.append(replication_key_value)
                 start_date = (parser.parse(replication_key_value) + timedelta(seconds=1)) or parser.parse(self.config.get("start_date"))
                 today = datetime.today()
                 next_token = start_date.replace(tzinfo=None)
