@@ -42,6 +42,13 @@ class LimitedTimeframeStream(Restaurant365Stream):
                 self.previous_replications.append(replication_key_value)
                 start_date = (parser.parse(replication_key_value) + timedelta(seconds=1)) or parser.parse(self.config.get("start_date"))
                 today = datetime.today()
+                if (
+                    previous_token
+                    and "token" in previous_token
+                    and start_date.replace(tzinfo=None)
+                    == previous_token["token"].replace(tzinfo=None)
+                ):
+                    start_date = start_date + timedelta(days=self.days_delta)
                 next_token = start_date.replace(tzinfo=None)
 
                 if (today - next_token).days < self.days_delta:
