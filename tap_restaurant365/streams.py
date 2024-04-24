@@ -556,8 +556,6 @@ class TransactionDetailsStream(LimitedTimeframeStream):
         """Return a token for identifying next page or None if no more pages."""
         # Check if pagination is enabled
         data = response.json()
-        if len(data['value'])>0:
-            something = "something"
         # Check for the presence of a next page link in the response data. nextLink is only present if there are more than 5000 records in filter response.
         #This is unlikely that a single transaction will have 5k records but it is possible so leaving this code part here. 
         if "@odata.nextLink" in data:
