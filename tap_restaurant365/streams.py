@@ -25,7 +25,7 @@ class LimitedTimeframeStream(Restaurant365Stream):
     ) -> t.Optional[t.Any]:
         """Return a token for identifying next page or None if no more pages."""
         # Check if pagination is enabled
-        if self.paginate == True:
+        if self.paginate:
             data = response.json()
             # Check for the presence of a next page link in the response data. nextLink is only present if there are more than 5000 records in filter response.
             if "@odata.nextLink" in data:
@@ -164,6 +164,9 @@ class TransactionsStream(LimitedTimeframeStream):
         th.Property("createdBy", th.StringType),
         th.Property("modifiedBy", th.StringType)
     ).to_dict()
+
+    def get_child_context(self, record: dict, context: t.Optional[dict]) -> dict:
+        return {"transaction_id":record["transactionId"]}
 
 
 class BillsStream(TransactionsStream):
@@ -522,8 +525,9 @@ class TransactionDetailsStream(LimitedTimeframeStream):
     name = "transaction_detail"
     path = "/TransactionDetail"
     primary_keys = ["transactionDetailId"]
-    replication_key = "modifiedOn"
+    replication_key = None
     paginate = True
+    parent_stream_type = TransactionsStream
     schema = th.PropertiesList(
         th.Property("transactionDetailId", th.StringType),
         th.Property("transactionId", th.StringType),
@@ -545,3 +549,43 @@ class TransactionDetailsStream(LimitedTimeframeStream):
         th.Property("modifiedOn", th.DateTimeType),
 
     ).to_dict()
+    
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: t.Optional[t.Any]
+    ) -> t.Optional[t.Any]:
+        """Return a token for identifying next page or None if no more pages."""
+        # Check if pagination is enabled
+        data = response.json()
+        if len(data['value'])>0:
+            something = "something"
+        # Check for the presence of a next page link in the response data. nextLink is only present if there are more than 5000 records in filter response.
+        #This is unlikely that a single transaction will have 5k records but it is possible so leaving this code part here. 
+        if "@odata.nextLink" in data:
+            # Increment the skip counter for pagination
+            self.skip += 5000
+            # Update the previous token if it exists
+            if previous_token:
+                previous_token = previous_token['token']
+            # Return the next page token and the updated skip value
+            return {"token":previous_token,"skip":self.skip}
+        self.skip = 0
+        # Return the next token and the current skip value
+        return None
+    def get_url_params(
+        self,
+        context: dict | None,  # noqa: ARG002
+        next_page_token: Any | None,  # noqa: ANN401
+    ) -> dict[str, Any]:
+
+        params: dict = {}
+        token_date = None
+        skip = 0
+        if next_page_token:
+            token_date, skip = next_page_token["token"], next_page_token["skip"]
+        if context.get('transaction_id'):
+            params["$filter"] = (
+                f"transactionId eq {context.get('transaction_id')}"
+            )
+        if skip>0:
+            params["$skip"] = skip
+        return params
