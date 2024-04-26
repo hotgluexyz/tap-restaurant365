@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import typing as t
-from pathlib import Path
+from datetime import datetime, timedelta
 from typing import Any
-import requests
-from datetime import timedelta, datetime
-from dateutil import parser
 
+import requests
+from dateutil import parser
 from singer_sdk import typing as th  # JSON Schema typing helpers
+from singer_sdk.helpers.jsonpath import extract_jsonpath
 
 from tap_restaurant365.client import Restaurant365Stream
 
@@ -140,10 +140,10 @@ class AccountsStream(Restaurant365Stream):
     ).to_dict()
 
 
-class TransactionsStream(LimitedTimeframeStream):
+class TransactionsParentStream(LimitedTimeframeStream):
     """Define custom stream."""
 
-    name = "transaction"
+    name = "transaction_parent_stream"
     path = "/Transaction"
     primary_keys = ["transactionId"]
     replication_key = "modifiedOn"
@@ -165,11 +165,8 @@ class TransactionsStream(LimitedTimeframeStream):
         th.Property("modifiedBy", th.StringType)
     ).to_dict()
 
-    def get_child_context(self, record: dict, context: t.Optional[dict]) -> dict:
-        return {"transaction_id":record["transactionId"]}
 
-
-class BillsStream(TransactionsStream):
+class BillsStream(TransactionsParentStream):
     """Define custom stream."""
 
     name = "bills"
@@ -179,7 +176,7 @@ class BillsStream(TransactionsStream):
     paginate = True
 
 
-class JournalEntriesStream(TransactionsStream):
+class JournalEntriesStream(TransactionsParentStream):
     """Define custom stream."""
 
     name = "journal_entries"
@@ -188,7 +185,7 @@ class JournalEntriesStream(TransactionsStream):
     replication_key = "modifiedOn"
     paginate = True
 
-class CreditMemosStream(TransactionsStream):
+class CreditMemosStream(TransactionsParentStream):
     """Define custom stream."""
 
     name = "credit_memos"
@@ -197,7 +194,7 @@ class CreditMemosStream(TransactionsStream):
     replication_key = "modifiedOn"
     paginate = True
 
-class StockCountStream(TransactionsStream):
+class StockCountStream(TransactionsParentStream):
     """Define custom stream."""
 
     name = "stock_count"
@@ -206,7 +203,7 @@ class StockCountStream(TransactionsStream):
     replication_key = "modifiedOn"
     paginate = True
 
-class BankExpensesStream(TransactionsStream):
+class BankExpensesStream(TransactionsParentStream):
     """Define custom stream."""
 
     name = "bank_expenses"
@@ -519,6 +516,62 @@ class EntityDeletedStream(Restaurant365Stream):
 
     ).to_dict()
 
+class TransactionsStream(TransactionsParentStream):
+    """Define custom stream."""
+
+    name = "transaction"
+    #We get node limit exceeded for number larger than this one. 
+    batch_size = 20
+    result_count = 0
+
+    def get_child_context(self, record: dict, context: t.Optional[dict]) -> dict:
+        return {"transaction_id": record["transactionId"]}
+    
+    def parse_response(self, response: requests.Response) -> t.Iterable[dict]:
+        """Parse the response and return an iterator of result records.
+
+        Args:
+            response: A raw `requests.Response`_ object.
+
+        Yields:
+            One item for every item found in the response.
+
+        .. _requests.Response:
+            https://requests.readthedocs.io/en/latest/api/#requests.Response
+        """
+        data = response.json()
+        if "value" in data:
+            #We cant get this number later because it breaks the generator flow.
+            self.result_count = len(data["value"])
+        yield from extract_jsonpath(self.records_jsonpath, input=data)
+
+    def get_records(self, context: dict | None) -> t.Iterable[dict[str, t.Any]]:
+        """Override the get records to call child stream once batch size is reached we have processed all of the records. ."""  # noqa: E501
+        batch_size = self.batch_size
+        current_batch = []
+        for i, record in enumerate(self.request_records(context), 1):
+            num_records = self.result_count
+            transformed_record = self.post_process(record, context)
+            if transformed_record is None:
+                # Record filtered out during post_process()
+                continue
+            current_batch.append(record["transactionId"])
+            if i % batch_size == 0 or i == num_records:  # Check if the batch is full or it's the last record
+                self._sync_children({"transaction_ids":current_batch})
+                current_batch = []
+            yield transformed_record
+
+    def _process_record(
+        self,
+        record: dict,
+        child_context: dict | None = None,
+        partition_context: dict | None = None,
+    ) -> None:
+        """Need to override this function because we don't want to call child stream for each parent request.
+        Above get_records will call child stream in batches.
+        """
+
+
 class TransactionDetailsStream(LimitedTimeframeStream):
     """Define custom stream."""
 
@@ -580,10 +633,15 @@ class TransactionDetailsStream(LimitedTimeframeStream):
         skip = 0
         if next_page_token:
             token_date, skip = next_page_token["token"], next_page_token["skip"]
-        if context.get('transaction_id'):
-            params["$filter"] = (
-                f"transactionId eq {context.get('transaction_id')}"
+        if context.get('transaction_ids'):
+            params["$filter"] = " or ".join(
+                [
+                    f"transactionId eq '{transaction_id}'"
+                    for transaction_id in context.get("transaction_ids")
+                ],
             )
+            #Replace ' from the populated filter to avoid errors
+            params["$filter"] = params["$filter"].replace("'","")
         if skip>0:
             params["$skip"] = skip
         return params

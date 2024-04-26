@@ -2,19 +2,17 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Callable, Iterable, Optional
-from datetime import timedelta, datetime
-from dateutil import parser
-
+from datetime import timedelta
+from http import HTTPStatus
+from typing import Any, Callable
 
 import requests
+from dateutil import parser
 from singer_sdk.authenticators import BasicAuthenticator
-from singer_sdk.helpers.jsonpath import extract_jsonpath
+from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
 from singer_sdk.pagination import BaseAPIPaginator  # noqa: TCH002
 from singer_sdk.streams import RESTStream
-from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
-from http import HTTPStatus
+
 _Auth = Callable[[requests.PreparedRequest], requests.PreparedRequest]
 
 
