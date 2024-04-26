@@ -18,15 +18,16 @@ _Auth = Callable[[requests.PreparedRequest], requests.PreparedRequest]
 
 class Restaurant365Stream(RESTStream):
     """Restaurant365 stream class."""
+
     skip = 0
     days_delta = 10
+
     @property
     def url_base(self) -> str:
         """Return the API URL root, configurable via tap settings."""
         return "https://odata.restaurant365.net/api/v2/views"
 
-    records_jsonpath = "$.value[*]"  
-
+    records_jsonpath = "$.value[*]"
 
     @property
     def authenticator(self) -> BasicAuthenticator:
@@ -60,9 +61,7 @@ class Restaurant365Stream(RESTStream):
         #     else:
         #         params
 
-        
         return super().get_new_paginator()
-    
 
     def get_starting_time(self, context):
         start_date = self.config.get("start_date")
@@ -88,11 +87,11 @@ class Restaurant365Stream(RESTStream):
 
         params: dict = {}
         if self.replication_key:
-            start_date = self.get_starting_time(context).strftime('%Y-%m-%dT%H:%M:%SZ')
+            start_date = self.get_starting_time(context).strftime("%Y-%m-%dT%H:%M:%SZ")
             params["$filter"] = f"{self.replication_key} ge {start_date}"
 
         return params
-    
+
     def validate_response(self, response: requests.Response) -> None:
         if (
             response.status_code in self.extra_retry_statuses
