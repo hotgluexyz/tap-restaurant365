@@ -67,6 +67,7 @@ class TapRestaurant365(Tap):
             streams.StockCountStream(self),
             streams.TransactionsStream(self),
             streams.TransactionDetailsStream(self),
+            streams.PayrollSummaryStream(self),
         ]
 
 

@@ -650,3 +650,81 @@ class TransactionDetailsStream(LimitedTimeframeStream):
         if skip > 0:
             params["$skip"] = skip
         return params
+
+class PayrollSummaryStream(LimitedTimeframeStream):
+    """Define custom stream."""
+
+    name = "payroll_summary"
+    path = "/PayrollSummary"
+    primary_keys = None
+    replication_key = None
+    pagination_date = None
+    schema = th.PropertiesList(
+        th.Property("employeeID", th.StringType),
+        th.Property("location", th.StringType),
+        th.Property("locationNumber", th.StringType),
+        th.Property("jobCode", th.StringType),
+        th.Property("payRate", th.NumberType),
+        th.Property("regularHours", th.NumberType),
+        th.Property("overtimeHours", th.NumberType),
+        th.Property("doubleOvertime", th.NumberType),
+        th.Property("breakPenalty", th.NumberType),
+        th.Property("grossReceipts", th.NumberType),
+        th.Property("splitShiftPenalty", th.NumberType),
+        th.Property("chargeTips", th.NumberType),
+        th.Property("declaredTips", th.NumberType),
+        th.Property("percentageOfSales", th.NumberType),
+        th.Property("percent", th.IntegerType),
+        th.Property("payrollStart", th.DateTimeType),
+        th.Property("payrollEnd", th.DateTimeType),
+    ).to_dict()
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: t.Optional[t.Any]
+    ) -> t.Optional[t.Any]:
+        """
+        Return a token for identifying next page or None if no more pages.
+
+        The token is a datetime object that is used to filter the next page
+        of results. The token is calculated by adding the days_delta
+        parameter to the previous token. If the new token is in the future,
+        the pagination is disabled.
+
+        Args:
+            response: The response object from the latest request.
+            previous_token: The token from the previous page, or None if
+                this is the first page.
+
+        Returns:
+            A token for the next page, or None if no more pages are available.
+        """
+        today = datetime.today()  # noqa: DTZ002
+        if self.pagination_date:
+            previous_token = self.pagination_date
+        if isinstance(previous_token,str):
+            previous_token = parser.parse(previous_token)
+        # Add a day to previous token
+        next_token = previous_token + timedelta(days=1)
+        next_token = next_token.replace(tzinfo=None)
+
+        # Disable pagination if the next token's date is in the future
+        if (today - next_token).days < 0:
+            return None
+        # Return the next token and the current skip value
+        return next_token
+        
+    
+    def get_url_params(
+        self,
+        context: dict | None,  # noqa: ARG002
+        next_page_token: Any | None,  # noqa: ANN401
+    ) -> dict[str, Any]:
+
+        params: dict = {}
+        token_date = None
+        if next_page_token:
+            token_date = next_page_token
+        start_date = token_date or self.get_starting_time(context)
+        end_date = start_date + timedelta(days=self.days_delta)
+        self.pagination_date = end_date
+        params["$filter"] = f"payrollStart ge {start_date.strftime('%Y-%m-%dT%H:%M:%SZ')} and payrollEnd le {end_date.strftime('%Y-%m-%dT23:59:59Z')}"
+        return params
