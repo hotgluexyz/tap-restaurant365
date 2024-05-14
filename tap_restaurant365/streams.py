@@ -106,8 +106,6 @@ class LimitedTimeframeStream(Restaurant365Stream):
             params["$filter"] += f" and type eq 'Stock Count'"
         if self.name == "bank_expenses":
             params["$filter"] += f" and type eq 'Bank Expense'"
-        if self.name == "payroll_summary":
-            params["$filter"] = f"payrollStart ge {start_date.strftime('%Y-%m-%dT%H:%M:%SZ')} and payrollEnd le {end_date.strftime('%Y-%m-%dT23:59:59Z')}"
         #
         if skip > 0:
             params["$skip"] = skip
