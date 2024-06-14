@@ -524,7 +524,7 @@ class TransactionsStream(TransactionsParentStream):
 
     name = "transaction"
     # We get node limit exceeded for number larger than this one.
-    batch_size = 20
+    batch_size = 10
     result_count = 0
 
     def get_child_context(self, record: dict, context: t.Optional[dict]) -> dict:
