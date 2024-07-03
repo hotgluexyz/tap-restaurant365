@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from datetime import timedelta
 from http import HTTPStatus
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Generator
 from urllib.parse import parse_qs, urlparse
 
+import backoff
 import requests
 from dateutil import parser
 from singer_sdk.authenticators import BasicAuthenticator
@@ -115,3 +116,24 @@ class Restaurant365Stream(RESTStream):
         ):
             msg = self.response_error_message(response)
             raise FatalAPIError(msg)
+
+    def backoff_wait_generator(self) -> Generator[float, None, None]:
+        """The wait generator used by the backoff decorator on request failure.
+
+        See for options:
+        https://github.com/litl/backoff/blob/master/backoff/_wait_gen.py
+
+        And see for examples: `Code Samples <../code_samples.html#custom-backoff>`_
+
+        Returns:
+            The wait generator
+        """
+        return backoff.expo(factor=5)
+
+    def backoff_max_tries(self) -> int:
+        """The number of attempts before giving up when retrying requests.
+
+        Returns:
+            Number of max retries.
+        """
+        return 8
