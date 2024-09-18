@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import cached_property
 import typing as t
 from datetime import datetime, timedelta
 from typing import Any
@@ -152,7 +153,6 @@ class TransactionsParentStream(LimitedTimeframeStream):
     name = "transaction_parent_stream"
     path = "/Transaction"
     primary_keys = ["transactionId"]
-    replication_key = "modifiedOn"
     paginate = True
     schema = th.PropertiesList(
         th.Property("transactionId", th.StringType),
@@ -171,15 +171,18 @@ class TransactionsParentStream(LimitedTimeframeStream):
         th.Property("modifiedBy", th.StringType),
     ).to_dict()
 
+    @cached_property
+    def replication_key(self):
+        if self._config.get("filter_transactions_by_date"):
+            return "date"
+        return "modifiedOn"
+
 
 class BillsStream(TransactionsParentStream):
     """Define custom stream."""
 
     name = "bills"
     path = "/Transaction"  # ?$filter=type eq 'AP Invoices'
-    primary_keys = ["transactionId"]
-    replication_key = "modifiedOn"
-    paginate = True
 
 
 class JournalEntriesStream(TransactionsParentStream):
@@ -187,9 +190,6 @@ class JournalEntriesStream(TransactionsParentStream):
 
     name = "journal_entries"
     path = "/Transaction"  # ?$filter=type eq 'Journal Entry and modifiedOn ge '
-    primary_keys = ["transactionId"]
-    replication_key = "modifiedOn"
-    paginate = True
 
 
 class CreditMemosStream(TransactionsParentStream):
@@ -197,9 +197,6 @@ class CreditMemosStream(TransactionsParentStream):
 
     name = "credit_memos"
     path = "/Transaction"  # ?$filter=type eq 'AP Credit memo and modifiedOn ge '
-    primary_keys = ["transactionId"]
-    replication_key = "modifiedOn"
-    paginate = True
 
 
 class StockCountStream(TransactionsParentStream):
@@ -207,19 +204,13 @@ class StockCountStream(TransactionsParentStream):
 
     name = "stock_count"
     path = "/Transaction"  # ?$filter=type eq 'Stock Count and modifiedOn ge '
-    primary_keys = ["transactionId"]
-    replication_key = "modifiedOn"
-    paginate = True
 
 
 class BankExpensesStream(TransactionsParentStream):
     """Define custom stream."""
-
+ 
     name = "bank_expenses"
     path = "/Transaction"  # ?$filter=type eq 'Bank Expense and modifiedOn ge '
-    primary_keys = ["transactionId"]
-    replication_key = "modifiedOn"
-    paginate = True
 
 
 class VendorsStream(Restaurant365Stream):
