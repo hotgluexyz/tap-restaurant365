@@ -15,6 +15,8 @@ from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
 from singer_sdk.pagination import BaseAPIPaginator  # noqa: TCH002
 from singer_sdk.streams import RESTStream
 
+import singer_sdk._singerlib as singer
+
 _Auth = Callable[[requests.PreparedRequest], requests.PreparedRequest]
 
 
@@ -74,8 +76,9 @@ class Restaurant365Stream(RESTStream):
         rep_key = None
         if start_date:
             start_date = parser.parse(self.config.get("start_date"))
-        if context:
-            rep_key = self.get_starting_timestamp(context) + timedelta(seconds=1)
+        rep_key = self.get_starting_timestamp(context)
+        if rep_key:
+            rep_key = rep_key + timedelta(seconds=1)
         return rep_key or start_date
 
     def get_url_params(
@@ -137,3 +140,14 @@ class Restaurant365Stream(RESTStream):
             Number of max retries.
         """
         return 8
+
+    def _write_state_message(self) -> None:
+        """Write out a STATE message with the latest state."""
+        tap_state = self.tap_state
+
+        if tap_state and tap_state.get("bookmarks"):
+            for stream_name in tap_state.get("bookmarks").keys():
+                if tap_state["bookmarks"][stream_name].get("partitions") and stream_name in ["transaction_detail"]:
+                    tap_state["bookmarks"][stream_name] = {"partitions": []}
+
+        singer.write_message(singer.StateMessage(value=tap_state))
