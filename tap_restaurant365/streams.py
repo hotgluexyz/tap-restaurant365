@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from functools import cached_property
+from backports.cached_property import cached_property
 import typing as t
 from datetime import datetime, timedelta
 from typing import Any
