@@ -25,6 +25,7 @@ class Restaurant365Stream(RESTStream):
 
     skip = 0
     days_delta = 10
+    timeout = 60
 
     @property
     def url_base(self) -> str:
