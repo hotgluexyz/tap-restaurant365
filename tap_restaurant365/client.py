@@ -12,7 +12,6 @@ import requests
 from dateutil import parser
 from singer_sdk.authenticators import BasicAuthenticator
 from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
-from singer_sdk.pagination import BaseAPIPaginator  # noqa: TCH002
 from singer_sdk.streams import RESTStream
 
 import singer_sdk._singerlib as singer
@@ -107,8 +106,8 @@ class Restaurant365Stream(RESTStream):
 
     def validate_response(self, response: requests.Response) -> None:
         if (
-            response.status_code in self.extra_retry_statuses
-            or response.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
+            response.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
+            or (hasattr(self, "extra_retry_statuses") and response.status_code in self.extra_retry_statuses)
         ):
             msg = self.response_error_message(response)
             raise RetriableAPIError(msg, response)
