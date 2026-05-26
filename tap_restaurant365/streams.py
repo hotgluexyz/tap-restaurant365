@@ -198,40 +198,33 @@ class BillsStream(TransactionsParentStream):
             },
         }
     
-    # def setup_selected_filters(self) -> None:
-    #     if not self._selected_filters:
-    #         return
-    #     company_ids: List[str] = []
-    #     for key, clause in self._selected_filters.items():
-    #         if not key.startswith("clause_") or not isinstance(clause, dict):
-    #             continue
-    #         if clause.get("field") != "companyId":
-    #             continue
-    #         op = str(clause.get("operator", "")).upper()
-    #         value = clause.get("value")
-    #         if op == "EQ" and value is not None:
-    #             company_ids.append(str(value))
-    #         elif op == "IN":
-    #             if isinstance(value, list):
-    #                 company_ids.extend(str(v) for v in value)
-    #             elif value is not None:
-    #                 company_ids.append(str(value))
-    #     self._vendor_company_ids = company_ids
+    def setup_selected_filters(self) -> None:
+        if not self._selected_filters:
+            return
+        company_ids: List[str] = []
+        clause = self._selected_filters.get("clause_1", {})
+        operator = str(clause.get("operator", "")).upper()
+        value = clause.get("value")
+        if operator == "EQ" and value is not None:
+            company_ids.append(value.rsplit("(", 1)[-1].rstrip(")"))
+        elif operator == "IN":
+           company_ids.extend(v.rsplit("(", 1)[-1].rstrip(")") for v in value) 
+        self._vendor_company_ids = company_ids
 
-    # def get_url_params(
-    #     self,
-    #     context: dict | None,
-    #     next_page_token: Any | None,
-    # ) -> dict[str, Any]:
-    #     params = super().get_url_params(context, next_page_token)
-    #     company_ids = getattr(self, "_vendor_company_ids", None)
-    #     if company_ids and "$filter" in params:
-    #         if len(company_ids) == 1:
-    #             params["$filter"] += f" and companyId eq '{company_ids[0]}'"
-    #         else:
-    #             parts = " or ".join(f"companyId eq '{cid}'" for cid in company_ids)
-    #             params["$filter"] += f" and ({parts})"
-    #     return params
+    def get_url_params(
+        self,
+        context: dict | None,
+        next_page_token: Any | None,
+    ) -> dict[str, Any]:
+        params = super().get_url_params(context, next_page_token)
+        company_ids = getattr(self, "_vendor_company_ids", None)
+        if company_ids:
+            if len(company_ids) == 1:
+                params["$filter"] += f" and companyId eq {company_ids[0]}"
+            else:
+                parts = " or ".join(f"companyId eq {cid}" for cid in company_ids)
+                params["$filter"] += f" and ({parts})"
+        return params
 
 
 class JournalEntriesStream(TransactionsParentStream):
