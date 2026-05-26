@@ -173,7 +173,7 @@ class TransactionsParentStream(LimitedTimeframeStream):
 
     @cached_property
     def replication_key(self):
-        if self.config.get("filter_transactions_by_date"):
+        if self._config.get("filter_transactions_by_date"):
             return "date"
         return "modifiedOn"
 
