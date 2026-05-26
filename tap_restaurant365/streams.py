@@ -278,10 +278,9 @@ class VendorsStream(Restaurant365Stream):
     ) -> List[Dict[str, Any]]:
         vendors = []
         url = f"{self.url_base}/Company"
-        params = {"$orderby": "name", "$top": 10, "$skip": 0, "$count": "true"}
+        params = {"$orderby": "name"}
         while url:
             prepared_request = self.build_prepared_request("GET", url, params=params)
-            #prepared_request.headers["Prefer"] = "odata.maxpagesize=100"  # dev only
             response = self.request_decorator(self._request)(prepared_request, None)
             data = response.json()
             vendors.extend(data.get("value", []))
