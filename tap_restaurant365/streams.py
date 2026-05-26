@@ -190,7 +190,7 @@ class BillsStream(TransactionsParentStream):
             "supports_nesting_clauses": False,
             "filters": {
                 "vendors": {
-                    "label": "Vendor Name",
+                    "label": "Vendor Name (ID)",
                     "supported_operators": ["IN", "EQ"],
                     "target_field": "companyId",
                     "options": "reference_data.vendors.name_companyId",
@@ -284,7 +284,7 @@ class VendorsStream(Restaurant365Stream):
         self, fields_to_include: Set[str]
     ) -> List[Dict[str, Any]]:
         prepared_request = self.build_prepared_request(
-            "GET", f"{self.url_base}/Company"
+            "GET", f"{self.url_base}/Company", params={"$orderby": "name"},
         )
         response = self.request_decorator(self._request)(prepared_request, None)
         return [
