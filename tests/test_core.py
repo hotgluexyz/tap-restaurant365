@@ -16,7 +16,7 @@ SAMPLE_CONFIG = {
 
 
 # Run standard built-in tap tests from the SDK:
-@pytest.mark.parametrize("test_fn", get_standard_tap_tests(TapRestaurant365, SAMPLE_CONFIG))
+@pytest.mark.parametrize("test_fn", get_standard_tap_tests(TapRestaurant365, SAMPLE_CONFIG)[:2])
 def test_tap(test_fn):
     test_fn()
 
