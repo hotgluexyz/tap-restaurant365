@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import cached_property
 import typing as t
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Dict, List, Set
 
 import requests
 from dateutil import parser
@@ -184,6 +184,20 @@ class BillsStream(TransactionsParentStream):
     name = "bills"
     path = "/Transaction"  # ?$filter=type eq 'AP Invoices'
 
+    def get_available_filters_metadata(self) -> Dict[str, Any]:
+        return {
+            "supported_operators": [],
+            "supports_nesting_clauses": False,
+            "filters": {
+                "vendors": {
+                    "label": "Vendor Name",
+                    "supported_operators": ["IN", "EQ"],
+                    "target_field": "companyId",
+                    "options": "reference_data.vendors.companyId",
+                }
+            },
+        }
+
 
 class JournalEntriesStream(TransactionsParentStream):
     """Define custom stream."""
@@ -231,6 +245,20 @@ class VendorsStream(Restaurant365Stream):
         th.Property("modifiedOn", th.DateTimeType),
     ).to_dict()
 
+    def get_available_filters_reference_data(
+        self, fields_to_include: Set[str]
+    ) -> List[Dict[str, Any]]:
+        prepared_request = self.build_prepared_request(
+            "GET", f"{self.url_base}/Company"
+        )
+        response = self.request_decorator(self._request)(prepared_request, None)
+        return [
+            {
+                "companyId": vendor["companyId"],
+                "name": vendor["name"],
+            }
+            for vendor in response.json().get("value", [])
+        ]
 
 class ItemsStream(Restaurant365Stream):
     """Define custom stream."""
