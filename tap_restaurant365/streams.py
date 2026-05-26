@@ -297,19 +297,6 @@ class VendorsStream(Restaurant365Stream):
             for vendor in vendors
         ]
 
-        prepared_request = self.build_prepared_request(
-            "GET", f"{self.url_base}/Company", params={"$orderby": "name"},
-        )
-        response = self.request_decorator(self._request)(prepared_request, None)
-        return [
-            {
-                "companyId": vendor["companyId"],
-                "name": vendor["name"],
-                "name_companyId": f"{vendor['name']} ({vendor['companyId']})",
-            }
-            for vendor in response.json().get("value", [])
-        ]
-
 class ItemsStream(Restaurant365Stream):
     """Define custom stream."""
 
