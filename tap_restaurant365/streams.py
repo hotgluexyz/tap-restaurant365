@@ -193,7 +193,7 @@ class BillsStream(TransactionsParentStream):
                     "label": "Vendor Name",
                     "supported_operators": ["IN", "EQ"],
                     "target_field": "companyId",
-                    "options": "reference_data.vendors.name",
+                    "options": "reference_data.vendors.name_companyId",
                 }
             },
         }
@@ -291,6 +291,7 @@ class VendorsStream(Restaurant365Stream):
             {
                 "companyId": vendor["companyId"],
                 "name": vendor["name"],
+                "name_companyId": f"{vendor['name']} ({vendor['companyId']})",
             }
             for vendor in response.json().get("value", [])
         ]
