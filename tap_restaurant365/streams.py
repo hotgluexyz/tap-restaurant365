@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from backports.cached_property import cached_property
+from functools import cached_property
 import typing as t
 from datetime import datetime, timedelta
 from typing import Any
 
 import requests
 from dateutil import parser
-from singer_sdk import typing as th  # JSON Schema typing helpers
-from singer_sdk.helpers.jsonpath import extract_jsonpath
+from hotglue_singer_sdk import typing as th  # JSON Schema typing helpers
+from hotglue_singer_sdk.helpers.jsonpath import extract_jsonpath
 
 from tap_restaurant365.client import Restaurant365Stream
 
@@ -173,7 +173,7 @@ class TransactionsParentStream(LimitedTimeframeStream):
 
     @cached_property
     def replication_key(self):
-        if self._config.get("filter_transactions_by_date"):
+        if self.config.get("filter_transactions_by_date"):
             return "date"
         return "modifiedOn"
 
