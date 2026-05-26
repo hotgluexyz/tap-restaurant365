@@ -11,7 +11,7 @@ keywords = [
 license = "Apache-2.0"
 
 [tool.poetry.dependencies]
-python = "<3.11,>=3.7.1"
+python = "<3.11,>=3.10.1"
 hotglue-singer-sdk = "^1.0.32"
 requests = "~=2.31.0"
 
