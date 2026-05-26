@@ -276,6 +276,27 @@ class VendorsStream(Restaurant365Stream):
     def get_available_filters_reference_data(
         self, fields_to_include: Set[str]
     ) -> List[Dict[str, Any]]:
+        vendors = []
+        url = f"{self.url_base}/Company"
+        params = {"$orderby": "name", "$top": 10, "$skip": 0, "$count": "true"}
+        while url:
+            prepared_request = self.build_prepared_request("GET", url, params=params)
+            #prepared_request.headers["Prefer"] = "odata.maxpagesize=100"  # dev only
+            response = self.request_decorator(self._request)(prepared_request, None)
+            data = response.json()
+            vendors.extend(data.get("value", []))
+            url = data.get("@odata.nextLink")
+            params = None  # nextLink URL already includes query params
+
+        return [
+            {
+                "companyId": vendor["companyId"],
+                "name": vendor["name"],
+                "name_companyId": f"{vendor['name']} ({vendor['companyId']})",
+            }
+            for vendor in vendors
+        ]
+
         prepared_request = self.build_prepared_request(
             "GET", f"{self.url_base}/Company", params={"$orderby": "name"},
         )
