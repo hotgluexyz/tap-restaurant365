@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from backports.cached_property import cached_property
+from functools import cached_property
 import typing as t
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Dict, List, Set
 
 import requests
 from dateutil import parser
-from singer_sdk import typing as th  # JSON Schema typing helpers
-from singer_sdk.helpers.jsonpath import extract_jsonpath
+from hotglue_singer_sdk import typing as th  # JSON Schema typing helpers
+from hotglue_singer_sdk.helpers.jsonpath import extract_jsonpath
 
 from tap_restaurant365.client import Restaurant365Stream
 
@@ -184,6 +184,48 @@ class BillsStream(TransactionsParentStream):
     name = "bills"
     path = "/Transaction"  # ?$filter=type eq 'AP Invoices'
 
+    def get_available_filters_metadata(self) -> Dict[str, Any]:
+        return {
+            "supported_operators": [],
+            "supports_nesting_clauses": False,
+            "filters": {
+                "vendors": {
+                    "label": "Vendor Name (ID)",
+                    "supported_operators": ["IN", "EQ"],
+                    "target_field": "companyId",
+                    "options": "reference_data.vendors.name_companyId",
+                }
+            },
+        }
+    
+    def setup_selected_filters(self) -> None:
+        if not self._selected_filters:
+            return
+        company_ids: List[str] = []
+        clause = self._selected_filters.get("clause_1", {})
+        operator = str(clause.get("operator", "")).upper()
+        value = clause.get("value")
+        if operator == "EQ" and value is not None:
+            company_ids.append(value.rsplit("(", 1)[-1].rstrip(")"))
+        elif operator == "IN":
+           company_ids.extend(v.rsplit("(", 1)[-1].rstrip(")") for v in value) 
+        self._vendor_company_ids = company_ids
+
+    def get_url_params(
+        self,
+        context: dict | None,
+        next_page_token: Any | None,
+    ) -> dict[str, Any]:
+        params = super().get_url_params(context, next_page_token)
+        company_ids = getattr(self, "_vendor_company_ids", None)
+        if company_ids:
+            if len(company_ids) == 1:
+                params["$filter"] += f" and companyId eq {company_ids[0]}"
+            else:
+                parts = " or ".join(f"companyId eq {cid}" for cid in company_ids)
+                params["$filter"] += f" and ({parts})"
+        return params
+
 
 class JournalEntriesStream(TransactionsParentStream):
     """Define custom stream."""
@@ -231,6 +273,28 @@ class VendorsStream(Restaurant365Stream):
         th.Property("modifiedOn", th.DateTimeType),
     ).to_dict()
 
+    def get_available_filters_reference_data(
+        self, fields_to_include: Set[str]
+    ) -> List[Dict[str, Any]]:
+        vendors = []
+        url = f"{self.url_base}/Company"
+        params = {"$orderby": "name"}
+        while url:
+            prepared_request = self.build_prepared_request("GET", url, params=params)
+            response = self.request_decorator(self._request)(prepared_request, None)
+            data = response.json()
+            vendors.extend(data.get("value", []))
+            url = data.get("@odata.nextLink")
+            params = None  # nextLink URL already includes query params
+
+        return [
+            {
+                "companyId": vendor["companyId"],
+                "name": vendor["name"],
+                "name_companyId": f"{vendor['name']} ({vendor['companyId']})",
+            }
+            for vendor in vendors
+        ]
 
 class ItemsStream(Restaurant365Stream):
     """Define custom stream."""
