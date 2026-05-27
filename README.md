@@ -1,122 +1,107 @@
 # tap-restaurant365
 
-`tap-restaurant365` is a Singer tap for Restaurant365, built with `hotglue-singer-sdk`.
+`tap-restaurant365` is a Singer tap for Restaurant365.
+
+
+<!--
+
+Developer TODO: Update the below as needed to correctly describe the install procedure. For instance, if you do not have a PyPi repo, or if you want users to directly install from your git repo, you can modify this step as appropriate.
+
+## Installation
+
+Install from PyPi:
+
+```bash
+pipx install tap-restaurant365
+```
+
+Install from GitHub:
+
+```bash
+pipx install git+https://github.com/ORG_NAME/tap-restaurant365.git@main
+```
+
+-->
 
 ## Configuration
 
-Create a config file with your Restaurant365 credentials:
+### Accepted Config Options
 
-```json
-{
-  "username": "USERNAME",
-  "password": "PASSWORD",
-  "store_name": "YOUR_SUBDOMAIN",
-  "start_date": "2021-10-01T00:00:00Z"
-}
+<!--
+Developer TODO: Provide a list of config options accepted by the tap.
+
+This section can be created by copy-pasting the CLI output from:
+
 ```
+tap-restaurant365 --about --format=markdown
+```
+-->
 
-`store_name` is the subdomain from `https://YOUR_SUBDOMAIN.restaurant365.com`.
-
-A full list of supported settings and capabilities is available by running:
+A full list of supported settings and capabilities for this
+tap is available by running:
 
 ```bash
 tap-restaurant365 --about
 ```
 
+### Configure using environment variables
+
+This Singer tap will automatically import any environment variables within the working directory's
+`.env` if the `--config=ENV` is provided, such that config values will be considered if a matching
+environment variable is set either in the terminal context or in the `.env` file.
+
+### Source Authentication and Authorization
+
+<!--
+Developer TODO: If your tap requires special access on the source system, or any special authentication requirements, provide those here.
+-->
+
 ## Usage
 
-Discover streams and run a sync:
 
-```bash
-tap-restaurant365 --config config.json --discover > catalog.json
-tap-restaurant365 --config config.json --catalog selected-catalog.json --state state.json
+### Executing the Tap Directly
+
+Create your config file and input your credentials.
+Example below
+
 ```
-
-During development, use Poetry:
-
-```bash
-poetry run tap-restaurant365 --config config.json --discover > catalog.json
-```
-
-### Available and selected filters
-
-The tap supports Hotglue filter discovery and runtime filter selection via `--get-available-filters` and `--selected-filters`.
-
-The `bills` stream can be filtered by vendor `companyId`. Vendor options are loaded from the Restaurant365 `/Company` endpoint.
-
-Get available filters:
-
-```bash
-tap-restaurant365 \
-  --config config.json \
-  --catalog catalog.json \
-  --get-available-filters > available-filters.json
-```
-
-Run a sync with selected filters:
-
-```bash
-tap-restaurant365 \
-  --config config.json \
-  --catalog catalog.json \
-  --state state.json \
-  --selected-filters selected-filters.json
-```
-
-Example `selected-filters.json` for a single vendor (`EQ`):
-
-```json
 {
-  "filters_version": "1.0.0",
-  "streams": {
-    "bills": {
-      "clause_1": {
-        "field": "vendors",
-        "operator": "EQ",
-        "value": "Acme Corp (12345)"
-      }
-    }
-  }
+    "username": "USERNAME", your store username
+    "password": "PASSWORD", your store password
+    "store_name": "YOUR SUBDOMAIN", https://THISVALUEHERE.restaurant365.com,
+    "start_date": "2021-10-01T00:00:00Z" DATE TO START SYNC
 }
 ```
 
-Example for multiple vendors (`IN`):
 
-```json
-{
-  "filters_version": "1.0.0",
-  "streams": {
-    "bills": {
-      "clause_1": {
-        "field": "vendors",
-        "operator": "IN",
-        "value": [
-          "Acme Corp (12345)",
-          "Other Vendor (67890)"
-        ]
-      }
-    }
-  }
-}
+```bash
+tap-restaurant365 --version
+tap-restaurant365 --help
+tap-restaurant365 --config CONFIG --discover > ./catalog.json
+singer-discover --input CATALOG --output OUTPUT-CATALOG 
+tap-restaurant365 --config CONFIG --catalog CATALOG > data.txt
 ```
-
-Filter values use the `Vendor Name (companyId)` format returned in `available-filters.json`.
 
 ## Developer Resources
+
 
 ```bash
 pipx install poetry
 poetry install
 ```
 
-Run tests:
+### Create and Run Tests
+
+Create tests within the `tests` subfolder and
+  then run:
 
 ```bash
 poetry run pytest
 ```
 
-Test the CLI:
+You can also test the `tap-restaurant365` CLI interface directly using `poetry run`:
 
 ```bash
 poetry run tap-restaurant365 --help
 ```
+

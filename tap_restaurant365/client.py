@@ -10,12 +10,12 @@ from urllib.parse import parse_qs, urlparse
 import backoff
 import requests
 from dateutil import parser
-from hotglue_singer_sdk.authenticators import BasicAuthenticator
-from hotglue_singer_sdk.exceptions import FatalAPIError, RetriableAPIError
-from hotglue_singer_sdk.streams import RESTStream
+from singer_sdk.authenticators import BasicAuthenticator
+from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
+from singer_sdk.pagination import BaseAPIPaginator  # noqa: TCH002
+from singer_sdk.streams import RESTStream
 
-import singer
-from singer import StateMessage
+import singer_sdk._singerlib as singer
 
 _Auth = Callable[[requests.PreparedRequest], requests.PreparedRequest]
 
@@ -151,4 +151,4 @@ class Restaurant365Stream(RESTStream):
                 if tap_state["bookmarks"][stream_name].get("partitions") and stream_name in ["transaction_detail"]:
                     tap_state["bookmarks"][stream_name] = {"partitions": []}
 
-        singer.write_message(StateMessage(value=tap_state))
+        singer.write_message(singer.StateMessage(value=tap_state))
