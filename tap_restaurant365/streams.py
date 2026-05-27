@@ -583,7 +583,7 @@ class TransactionsStream(TransactionsParentStream):
     result_count = 0
 
     def get_child_context(self, record: dict, context: t.Optional[dict]) -> dict:
-        return {"transaction_id": record["transactionId"]}
+        return {}
 
     def parse_response(self, response: requests.Response) -> t.Iterable[dict]:
         """Parse the response and return an iterator of result records.
@@ -620,16 +620,12 @@ class TransactionsStream(TransactionsParentStream):
                 self._sync_children({"transaction_ids": current_batch})
                 current_batch = []
             yield transformed_record
+        
+    def _sync_children(self, child_context: dict) -> None:
+        if not child_context.get("transaction_ids"):
+            return
+        super()._sync_children(child_context)
 
-    def _process_record(
-        self,
-        record: dict,
-        child_context: dict | None = None,
-        partition_context: dict | None = None,
-    ) -> None:
-        """Need to override this function because we don't want to call child stream for each parent request.
-        Above get_records will call child stream in batches.
-        """
 
 
 class TransactionDetailsStream(LimitedTimeframeStream):
