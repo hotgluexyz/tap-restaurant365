@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from singer_sdk import Tap
-from singer_sdk import typing as th  # JSON schema typing helpers
+from hotglue_singer_sdk import Tap
+from hotglue_singer_sdk import typing as th  # JSON schema typing helpers
 
 # TODO: Import your custom stream types here:
 from tap_restaurant365 import streams
