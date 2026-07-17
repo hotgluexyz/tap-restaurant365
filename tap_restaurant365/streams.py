@@ -18,8 +18,8 @@ from tap_restaurant365.client import Restaurant365Stream
 class LimitedTimeframeStream(Restaurant365Stream):
     """parent class stream for override/pagination"""
 
-    name = "vendors"
-    path = "/Company"
+    first_successful_response = False
+    daily_sync = False
 
     def get_next_page_token(
         self, response: requests.Response, previous_token: t.Optional[t.Any]
@@ -38,6 +38,10 @@ class LimitedTimeframeStream(Restaurant365Stream):
                 # Return the next page token and the updated skip value
                 return {"token": previous_token, "skip": self.skip}
             else:
+                if self.daily_sync and not self.first_successful_response:
+                    self.first_successful_response = True
+                    self.days_delta = 1
+
                 # Reset skip value for a new pagination sequence
                 self.skip = 0
                 # Determine the starting replication value for data extraction
@@ -463,6 +467,7 @@ class SalesEmployeeStream(LimitedTimeframeStream):
     path = "/SalesEmployee"
     primary_keys = ["salesId"]
     replication_key = "modifiedOn"
+    daily_sync = True
     paginate = True
     schema = th.PropertiesList(
         th.Property("salesId", th.StringType),
@@ -500,6 +505,7 @@ class SalesDetailStream(LimitedTimeframeStream):
     path = "/SalesDetail"
     primary_keys = ["salesdetailID"]
     replication_key = "modifiedOn"
+    daily_sync = True
     paginate = True
     schema = th.PropertiesList(
         th.Property("salesdetailID", th.StringType),
@@ -532,6 +538,7 @@ class SalesPaymentStream(LimitedTimeframeStream):
     path = "/SalesPayment"
     primary_keys = ["salespaymentId"]
     replication_key = "modifiedOn"
+    daily_sync = True
     paginate = True
     schema = th.PropertiesList(
         th.Property("salespaymentId", th.StringType),
@@ -627,7 +634,6 @@ class TransactionsStream(TransactionsParentStream):
         super()._sync_children(child_context)
 
 
-
 class TransactionDetailsStream(LimitedTimeframeStream):
     """Define custom stream."""
 
@@ -701,6 +707,7 @@ class TransactionDetailsStream(LimitedTimeframeStream):
         if skip > 0:
             params["$skip"] = skip
         return params
+
 
 class PayrollSummaryStream(LimitedTimeframeStream):
     """Define custom stream."""
