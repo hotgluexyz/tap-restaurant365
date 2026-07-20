@@ -110,6 +110,7 @@ class Restaurant365Stream(RESTStream):
             response.status_code in self.extra_retry_statuses
             or response.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
         ):
+            self.logger.error(f"Response URL: {response.request.url}, Status Code: {response.status_code}, Response: {response.text}")
             msg = self.response_error_message(response)
             raise RetriableAPIError(msg, response)
 
