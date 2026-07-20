@@ -19,7 +19,7 @@ class LimitedTimeframeStream(Restaurant365Stream):
     """parent class stream for override/pagination"""
 
     first_successful_response = False
-    daily_sync = False
+    twelve_hour_sync = False
 
     def get_next_page_token(
         self, response: requests.Response, previous_token: t.Optional[t.Any]
@@ -38,9 +38,9 @@ class LimitedTimeframeStream(Restaurant365Stream):
                 # Return the next page token and the updated skip value
                 return {"token": previous_token, "skip": self.skip}
             else:
-                if self.daily_sync and not self.first_successful_response:
+                if self.twelve_hour_sync and not self.first_successful_response:
+                    self.logger.info(f"Twelve hour sync is enabled for {self.name}")
                     self.first_successful_response = True
-                    self.days_delta = 1
 
                 # Reset skip value for a new pagination sequence
                 self.skip = 0
@@ -67,13 +67,12 @@ class LimitedTimeframeStream(Restaurant365Stream):
                     and start_date.replace(tzinfo=None)
                     <= previous_token["token"].replace(tzinfo=None)
                 ):
-                    start_date = previous_token["token"] + timedelta(
-                        days=self.days_delta
-                    )
+                    delta_time = timedelta(hours=12) if self.twelve_hour_sync else timedelta(days=self.days_delta)
+                    start_date = previous_token["token"] + delta_time
                 next_token = start_date.replace(tzinfo=None)
 
                 # Disable pagination if the next token's date is in the future
-                if (today - next_token).days < 0:
+                if next_token > today:
                     self.paginate = False
                 # Return the next token and the current skip value
                 return {"token": next_token, "skip": self.skip}
@@ -93,11 +92,12 @@ class LimitedTimeframeStream(Restaurant365Stream):
         if next_page_token:
             token_date, skip = next_page_token["token"], next_page_token["skip"]
         start_date = token_date or self.get_starting_time(context)
-        end_date = start_date + timedelta(days=self.days_delta)
+        delta_time = timedelta(hours=12) if self.twelve_hour_sync else timedelta(days=self.days_delta)
+        end_date = start_date + delta_time
         if self.replication_key:
             params[
                 "$filter"
-            ] = f"{self.replication_key} ge {start_date.strftime('%Y-%m-%dT%H:%M:%SZ')} and {self.replication_key} lt {end_date.strftime('%Y-%m-%dT23:59:59Z')}"
+            ] = f"{self.replication_key} ge {start_date.strftime('%Y-%m-%dT%H:%M:%SZ')} and {self.replication_key} lt {end_date.strftime('%Y-%m-%dT%H:%M:%SZ')}"
             # Order by replication key so the response is consistent
             params["$orderby"] = f"{self.replication_key}"
         if self.name == "journal_entries":
@@ -467,7 +467,7 @@ class SalesEmployeeStream(LimitedTimeframeStream):
     path = "/SalesEmployee"
     primary_keys = ["salesId"]
     replication_key = "modifiedOn"
-    daily_sync = True
+    twelve_hour_sync = True
     paginate = True
     schema = th.PropertiesList(
         th.Property("salesId", th.StringType),
@@ -505,7 +505,7 @@ class SalesDetailStream(LimitedTimeframeStream):
     path = "/SalesDetail"
     primary_keys = ["salesdetailID"]
     replication_key = "modifiedOn"
-    daily_sync = True
+    twelve_hour_sync = True
     paginate = True
     schema = th.PropertiesList(
         th.Property("salesdetailID", th.StringType),
@@ -538,7 +538,7 @@ class SalesPaymentStream(LimitedTimeframeStream):
     path = "/SalesPayment"
     primary_keys = ["salespaymentId"]
     replication_key = "modifiedOn"
-    daily_sync = True
+    twelve_hour_sync = True
     paginate = True
     schema = th.PropertiesList(
         th.Property("salespaymentId", th.StringType),
