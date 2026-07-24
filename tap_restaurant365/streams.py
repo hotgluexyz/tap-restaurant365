@@ -571,7 +571,7 @@ class EntityDeletedStream(Restaurant365Stream):
 
     name = "entity_deleted"
     path = "/EntityDeleted"
-    primary_keys = ["entityId"]
+    primary_keys = ["rowVersion"]
     replication_key = "deletedOn"
     schema = th.PropertiesList(
         th.Property("entityId", th.StringType),
