@@ -639,7 +639,7 @@ class TransactionDetailsStream(LimitedTimeframeStream):
 
     name = "transaction_detail"
     path = "/TransactionDetail"
-    primary_keys = ["transactionDetailId"]
+    primary_keys = ["transactionDetailId", "rowType"]
     replication_key = None
     paginate = True
     parent_stream_type = TransactionsStream
@@ -656,6 +656,7 @@ class TransactionDetailsStream(LimitedTimeframeStream):
         th.Property("adjustment", th.NumberType),
         th.Property("unitOfMeasureName", th.StringType),
         th.Property("comment", th.StringType),
+        th.Property("rowType", th.StringType),
         th.Property("cateringEvent", th.StringType),
         th.Property("exclude", th.BooleanType),
         th.Property("createdBy", th.StringType),
