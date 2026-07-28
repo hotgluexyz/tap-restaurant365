@@ -665,6 +665,39 @@ class TransactionDetailsStream(LimitedTimeframeStream):
         th.Property("modifiedOn", th.DateTimeType),
     ).to_dict()
 
+    def get_records(self, context: dict | None) -> t.Iterable[dict[str, t.Any]]:
+        """Buffer parent-batch results; re-request once if duplicate PKs appear."""
+        records = list(super().get_records(context))
+        dup_keys = self._duplicate_keys(records)
+        if dup_keys:
+            self.logger.info(
+                "Duplicate transaction_detail PKs %s for context %s; re-requesting",
+                dup_keys,
+                context,
+            )
+            records = list(super().get_records(context))
+            dup_keys = self._duplicate_keys(records)
+            if dup_keys:
+                self.logger.info(
+                    "Duplicates still present after re-request %s for context %s; continuing",
+                    dup_keys,
+                    context,
+                )
+                error = "Duplicate transaction_detail PKs found in the response"
+                raise Exception(error)
+        yield from records
+
+    def _duplicate_keys(self, records: list[dict]) -> list[tuple]:
+        seen = set()
+        dups = []
+        for record in records:
+            key = tuple(record.get(pk) for pk in self.primary_keys)
+            if key in seen:
+                dups.append(key)
+            else:
+                seen.add(key)
+        return dups
+
     def get_next_page_token(
         self, response: requests.Response, previous_token: t.Optional[t.Any]
     ) -> t.Optional[t.Any]:
