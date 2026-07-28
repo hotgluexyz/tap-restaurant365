@@ -689,6 +689,8 @@ class TransactionDetailsStream(LimitedTimeframeStream):
                     dup_keys,
                     context,
                 )
+                error = "Duplicate transaction_detail PKs found in the response"
+                raise Exception(error)
         yield from records
 
     def _duplicate_keys(self, records: list[dict]) -> list[tuple]:
