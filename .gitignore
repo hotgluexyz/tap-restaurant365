@@ -1,6 +1,9 @@
 # Secrets and internal config files
 **/.secrets/*
 
+# macOS metadata
+.DS_Store
+
 # Ignore meltano internal cache and sqlite systemdb
 
 .meltano/
